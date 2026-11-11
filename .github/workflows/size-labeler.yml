@@ -2,7 +2,10 @@
 
 name: size-labeler
 
-on: [pull_request_target]
+# Original triggers preserved; manual-only for test cost control.
+# on: [pull_request_target]
+on:
+  workflow_dispatch:
 
 permissions:
   contents: read
