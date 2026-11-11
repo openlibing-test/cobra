@@ -1,6 +1,9 @@
 name: "Pull Request Labeler"
+# Original triggers preserved; manual-only for test cost control.
+# on:
+# - pull_request_target
 on:
-- pull_request_target
+  workflow_dispatch:
 
 permissions:
   contents: read
