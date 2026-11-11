@@ -1,0 +1,24 @@
+{
+  "global": {
+    "audit": true
+  },
+  "exclude": ["G104"],
+  "exclude-rules": [
+    {
+      "path": "vendor/.*",
+      "rules": ["*"]
+    }
+  ],
+  "G101": {
+    "pattern": "(?i)passwd|pass|password|pwd|secret|private_key|token",
+    "ignore_entropy": false,
+    "entropy_threshold": "80.0",
+    "per_char_threshold": "3.0",
+    "truncate": "32",
+    "min_entropy_length": "8"
+  },
+  "G301": "0o600",
+  "G302": "0o600",
+  "G306": "0o750",
+  "G307": "0o750"
+}

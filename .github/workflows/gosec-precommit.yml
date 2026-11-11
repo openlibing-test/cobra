@@ -1,0 +1,70 @@
+name: gosec-precommit
+
+# 场景一：pre-commit 集成（GitHub Actions 版）
+# 参考：openlibing/docs static-code-analysis/.../tools/gosec/demos/github/gosec-precommit.yml
+# 触发：手动 / push / PR / 定时
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "0 0 * * *" # 5 位 POSIX：每天 00:00 UTC（CST 08:00）
+
+# OIDC 免密换证：GitHub 平台使用华为云 IAM 中注册的 GitHubActions 身份提供商，
+# 无需配置任何 Secrets；id-token: write 缺失时上传步骤会报
+# 「缺少 ACTIONS_ID_TOKEN_REQUEST_URL / ACTIONS_ID_TOKEN_REQUEST_TOKEN 环境变量」
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  pre-commit-report:
+    name: pre-commit-report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: setup-go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23" # gosec v2.22.4 要求 Go >= 1.23
+          cache: true
+
+      # 安装到 .github/bin/，pre-commit hook 用固定路径
+      - name: Install gosec
+        run: |
+          mkdir -p .github/bin /tmp/pre-commit-reports/
+          GOBIN="$(pwd)/.github/bin" go install github.com/securego/gosec/v2/cmd/gosec@v2.22.4
+          chmod +x .github/bin/gosec
+          .github/bin/gosec -version
+
+      - name: run pre-commit (generate sarif)
+        id: pre-commit
+        uses: openlibing-test/pre-commit-action@main
+        with:
+          extra_args: "--all-files"
+          report-dir: /tmp/pre-commit-reports/
+
+      # gosec 输出路径固定，upload 直接引用文件（勿依赖 sarif-files output，可能为空）
+      - name: Verify SARIF report
+        if: ${{ always() }}
+        run: |
+          echo "pre-commit sarif-files output: '${{ steps.pre-commit.outputs.sarif-files }}'"
+          ls -la /tmp/pre-commit-reports/ || true
+          test -s /tmp/pre-commit-reports/gosec.sarif
+
+      - name: upload sarif reports
+        if: ${{ always() }}
+        uses: openlibing-test/upload-sarif-action@source-platform-detection
+        with:
+          sarif_file: /tmp/pre-commit-reports/gosec.sarif
+          source_path: .
+          env_type: beta # GitHub 接入当前在 beta 环境验收

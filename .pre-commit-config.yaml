@@ -1,0 +1,27 @@
+# gosec pre-commit 钩子配置（GitHub 方案）
+# 参考：openlibing/docs static-code-analysis/.../tools/gosec/demos/github/.pre-commit-config.yaml
+# entry 固定指向 .github/bin/gosec，由 .github/workflows/gosec-precommit.yml
+# 的「Install gosec」step 通过 GOBIN="$(pwd)/.github/bin" go install 安装
+repos:
+  # ===================== Go 语言 =====================
+  # local hook：直接调 gosec，依赖本机 Go 工具链 + go install 安装的 gosec
+  # - language: system：pre-commit 不创建隔离环境，直接执行 entry
+  # - pass_filenames: false + ./...：gosec 必须按包/模块扫描；pre-commit 默认传文件列表会导致 results 为空
+  # - require_serial：避免分批覆盖 SARIF 输出
+  # - -fmt sarif + -out：直接生成 SARIF v2.1.0 到 pre-commit-action 约定的报告目录
+  - repo: local
+    hooks:
+      - id: gosec
+        name: gosec (sarif report)
+        entry: .github/bin/gosec
+        language: system
+        types: [go]
+        pass_filenames: false
+        require_serial: true
+        args:
+          - -conf=gosec.json
+          - -fmt=sarif
+          - -out=/tmp/pre-commit-reports/gosec.sarif
+          - -exclude-dir=vendor
+          - -exclude-generated
+          - ./...
