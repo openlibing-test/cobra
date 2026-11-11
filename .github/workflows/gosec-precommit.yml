@@ -3,14 +3,17 @@ name: gosec-precommit
 # 场景一：pre-commit 集成（GitHub Actions 版）
 # 参考：openlibing/docs static-code-analysis/.../tools/gosec/demos/github/gosec-precommit.yml
 # 触发：手动 / push / PR / 定时
+# Original triggers preserved; manual-only for test cost control.
+# on:
+#   workflow_dispatch:
+#   push:
+#     branches: ["main"]
+#   pull_request:
+#     branches: ["main"]
+#   schedule:
+#     - cron: "0 0 * * *" # 5 位 POSIX：每天 00:00 UTC（CST 08:00）
 on:
   workflow_dispatch:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
-  schedule:
-    - cron: "0 0 * * *" # 5 位 POSIX：每天 00:00 UTC（CST 08:00）
 
 # OIDC 免密换证：GitHub 平台使用华为云 IAM 中注册的 GitHubActions 身份提供商，
 # 无需配置任何 Secrets；id-token: write 缺失时上传步骤会报
