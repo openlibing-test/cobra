@@ -53,3 +53,4 @@ jobs:
         with:
           sarif_file: reports/gosec.sarif
           source_path: .
+          env_type: beta # GitHub 接入需回传 beta 环境，否则回调报「非法 source 值」
