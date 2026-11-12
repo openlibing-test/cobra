@@ -8,10 +8,15 @@ title = "Gitleaks Config"
 useDefault = true
 
 # 全局允许列表：跳过特定路径或正则匹配
-[[allowlist]]
+[allowlist]
 description = "global allow list"
 paths = [
   '''^vendor/''',
+  '''^tests/fixtures/''',
+  '''^\.private-actions/''',
+  '''^sarif/''',
+  '''^gitleaks\.sarif$''',
+
   '''^node_modules/''',
   '''\.mock\.go$''',
 ]
@@ -23,7 +28,3 @@ description = "Custom API Key"
 regex = '''custom_key_[a-zA-Z0-9]{32}'''
 tags = ["key", "custom"]
 
-# 路径排除：不对匹配的文件执行扫描
-[[paths]]
-description = "exclude test fixtures"
-paths = ['''^tests/fixtures/''']

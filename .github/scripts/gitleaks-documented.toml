@@ -1,0 +1,29 @@
+# .gitleaks.toml 配置文件
+# 文档：https://github.com/gitleaks/gitleaks#configuration
+
+title = "Gitleaks Config"
+
+# 扩展默认规则（不写 extend 则只使用 [allowlist] 和 [[paths]]）
+[extend]
+useDefault = true
+
+# 全局允许列表：跳过特定路径或正则匹配
+[[allowlist]]
+description = "global allow list"
+paths = [
+  '''^vendor/''',
+  '''^node_modules/''',
+  '''\.mock\.go$''',
+]
+
+# 自定义规则示例：检测自定义 API Key 格式
+[[rules]]
+id = "custom-api-key"
+description = "Custom API Key"
+regex = '''custom_key_[a-zA-Z0-9]{32}'''
+tags = ["key", "custom"]
+
+# 路径排除：不对匹配的文件执行扫描
+[[paths]]
+description = "exclude test fixtures"
+paths = ['''^tests/fixtures/''']
