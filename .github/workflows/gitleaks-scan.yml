@@ -30,12 +30,20 @@ jobs:
           echo "$PWD/.github/bin" >> "$GITHUB_PATH"
       - name: Verify documentation semantics
         run: python .github/scripts/verify-gitleaks-docs.py
-      - name: Run documented full scan
+      - name: Create synthetic detection fixture
+        run: python -c "from pathlib import Path; Path('gitleaks-validation-placeholder.txt').write_text('Synthetic test placeholder, never a credential\ncustom_key_' + 'A' * 32 + '\n')"
+      - name: Run full scan with distinct error and finding exit codes
         run: |
           mkdir -p sarif
-          .github/bin/gitleaks dir . --config .gitleaks.toml --verbose \
-            --report-format sarif --report-path sarif/gitleaks.sarif \
-            || echo "gitleaks found leaks, continuing to upload SARIF"
+          set +e
+          .github/bin/gitleaks dir . --config .gitleaks.toml --redact=100 --exit-code 10 \
+            --report-format sarif --report-path sarif/gitleaks.sarif
+          status=$?
+          set -e
+          echo "Gitleaks exit code: $status (0=clean, 10=findings)"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 10 ]; then exit "$status"; fi
+          test -s sarif/gitleaks.sarif
+          python -c "import json; d=json.load(open('sarif/gitleaks.sarif')); assert d['version']=='2.1.0'; assert d['runs'][0]['results']; print('SARIF findings:', len(d['runs'][0]['results']))"
       - name: Checkout private upload-sarif-action
         if: ${{ always() }}
         uses: actions/checkout@v4

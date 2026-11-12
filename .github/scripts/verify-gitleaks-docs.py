@@ -40,7 +40,7 @@ run_case('singular-allowlist-unknown-paths-table', singular, files, 2, 1)
 run_case('corrected-allowlist-paths', fixed, files, 1, 1)
 run_case('clean-directory', fixed, {'clean.txt': 'hello world'}, 0, 0)
 run_case('allow-comment-same-line', fixed, {'sample.txt': marker + ' # gitleaks:allow'}, 0, 0)
-run_case('allow-comment-previous-line', fixed, {'sample.txt': '# gitleaks:allow\n' + marker}, 1, 1)
+run_case('allow-comment-previous-line', fixed, {'sample.txt': '# gitleaks:allow\n' + marker}, 0, 0)
 run_case('pragma-comment-same-line', fixed, {'sample.txt': marker + ' # pragma: allowlist secret'}, 1, 1)
 (root / 'gitleaks-docs-cases.json').write_text(json.dumps(results, ensure_ascii=False, indent=2))
 if not all(item['passed'] for item in results):

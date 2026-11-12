@@ -39,6 +39,10 @@ jobs:
           token: ${{ secrets.PRIVATE_ACTIONS_READ_TOKEN }}
           path: .private-actions/pre-commit-action
           persist-credentials: false
+      - name: Keep private action metadata outside scan workspace
+        run: mv .private-actions/pre-commit-action/.git "$RUNNER_TEMP/pre-commit-action-git"
+      - name: Create synthetic detection fixture
+        run: python -c "from pathlib import Path; Path('gitleaks-validation-placeholder.txt').write_text('Synthetic test placeholder, never a credential\ncustom_key_' + 'A' * 32 + '\n')"
       - name: Run documented pre-commit hook
         id: pre-commit
         uses: ./.private-actions/pre-commit-action
@@ -46,6 +50,11 @@ jobs:
           extra_args: '--config=.pre-commit-gitleaks.yaml --all-files'
           report-dir: /tmp/pre-commit-reports/
           sarif-file: gitleaks.sarif
+      - name: Require real SARIF output
+        if: ${{ always() }}
+        run: |
+          test -s gitleaks.sarif
+          python -c "import json; d=json.load(open('gitleaks.sarif')); assert d['version']=='2.1.0'; assert d['runs'][0]['results']; print('SARIF findings:', len(d['runs'][0]['results']))"
       - name: Checkout private upload-sarif-action
         if: ${{ always() }}
         uses: actions/checkout@v4
