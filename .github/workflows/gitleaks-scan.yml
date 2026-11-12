@@ -33,6 +33,7 @@ jobs:
       - name: Create synthetic detection fixture
         run: python -c "from pathlib import Path; Path('gitleaks-validation-placeholder.txt').write_text('Synthetic test placeholder, never a credential\ncustom_key_' + 'A' * 32 + '\n')"
       - name: Run full scan with distinct error and finding exit codes
+        id: scan
         run: |
           mkdir -p sarif
           set +e
@@ -59,6 +60,7 @@ jobs:
         with:
           sarif_file: sarif/gitleaks.sarif
           source_path: .
+          env_type: beta # prod currently rejects GITHUB_ACTION callbacks
       - name: Preserve verification artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4

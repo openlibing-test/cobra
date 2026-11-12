@@ -6,7 +6,7 @@ import tempfile
 
 root = pathlib.Path.cwd()
 binary = str(root / '.github/bin/gitleaks')
-original = (root / '.gitleaks.toml').read_text()
+original = (root / '.github/scripts/gitleaks-documented.toml').read_text(encoding='utf-8')
 singular = original.replace('[[allowlist]]', '[allowlist]')
 fixed = singular.split('# 路径排除：')[0].replace("  '''^vendor/''',", "  '''^vendor/''',\n  '''^tests/fixtures/''',")
 marker = 'custom_key_' + 'A' * 32

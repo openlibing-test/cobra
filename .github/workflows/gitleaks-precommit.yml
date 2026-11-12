@@ -51,6 +51,7 @@ jobs:
           report-dir: /tmp/pre-commit-reports/
           sarif-file: gitleaks.sarif
       - name: Require real SARIF output
+        id: report
         if: ${{ always() }}
         run: |
           test -s gitleaks.sarif
@@ -70,6 +71,7 @@ jobs:
         with:
           sarif_file: ${{ steps.pre-commit.outputs.sarif-files }}
           source_path: .
+          env_type: beta # prod currently rejects GITHUB_ACTION callbacks
       - name: Preserve verification artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
