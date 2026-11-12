@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: gitleaks
+        name: gitleaks (full working tree)
+        entry: gitleaks dir . --config .gitleaks.toml --no-banner --report-format sarif --report-path gitleaks.sarif
+        language: system
+        pass_filenames: false
+        always_run: true

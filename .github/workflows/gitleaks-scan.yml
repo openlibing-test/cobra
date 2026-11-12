@@ -1,0 +1,61 @@
+name: gitleaks-scan
+on:
+  workflow_dispatch:
+  push:
+    branches: [verify/gitleaks-docs-20261112]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install documented Gitleaks version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=8.30.1
+          work="$RUNNER_TEMP/gitleaks-install"
+          mkdir -p "$work" .github/bin
+          curl --fail --location --retry 3 "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" -o "$work/gitleaks_${version}_linux_x64.tar.gz"
+          curl --fail --location --retry 3 "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_checksums.txt" -o "$work/checksums.txt"
+          (cd "$work"; grep " gitleaks_${version}_linux_x64.tar.gz$" checksums.txt | sha256sum -c -)
+          tar -xzf "$work/gitleaks_${version}_linux_x64.tar.gz" -C .github/bin gitleaks
+          chmod +x .github/bin/gitleaks
+          .github/bin/gitleaks version
+          echo "$PWD/.github/bin" >> "$GITHUB_PATH"
+      - name: Run documented full scan
+        run: |
+          mkdir -p sarif
+          .github/bin/gitleaks dir . --config .gitleaks.toml --verbose \
+            --report-format sarif --report-path sarif/gitleaks.sarif \
+            || echo "gitleaks found leaks, continuing to upload SARIF"
+      - name: Checkout private upload-sarif-action
+        if: ${{ always() }}
+        uses: actions/checkout@v4
+        with:
+          repository: openlibing-test/upload-sarif-action
+          ref: source-platform-detection
+          token: ${{ secrets.PRIVATE_ACTIONS_READ_TOKEN }}
+          path: .private-actions/upload-sarif-action
+          persist-credentials: false
+      - name: Upload SARIF to openLiBing
+        if: ${{ always() }}
+        uses: ./.private-actions/upload-sarif-action
+        with:
+          sarif_file: sarif/gitleaks.sarif
+          source_path: .
+      - name: Preserve verification artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-scan-evidence
+          if-no-files-found: warn
+          path: |
+            sarif/*.sarif
+            gitleaks.sarif
+            /tmp/pre-commit-reports/*.sarif
