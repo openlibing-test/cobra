@@ -43,7 +43,7 @@ jobs:
         id: pre-commit
         uses: ./.private-actions/pre-commit-action
         with:
-          extra_args: '--config .pre-commit-gitleaks.yaml --all-files'
+          extra_args: '--config=.pre-commit-gitleaks.yaml --all-files'
           report-dir: /tmp/pre-commit-reports/
           sarif-file: gitleaks.sarif
       - name: Checkout private upload-sarif-action

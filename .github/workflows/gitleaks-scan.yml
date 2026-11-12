@@ -28,6 +28,8 @@ jobs:
           chmod +x .github/bin/gitleaks
           .github/bin/gitleaks version
           echo "$PWD/.github/bin" >> "$GITHUB_PATH"
+      - name: Verify documentation semantics
+        run: python .github/scripts/verify-gitleaks-docs.py
       - name: Run documented full scan
         run: |
           mkdir -p sarif
@@ -56,6 +58,7 @@ jobs:
           name: gitleaks-scan-evidence
           if-no-files-found: warn
           path: |
+            gitleaks-docs-cases.json
             sarif/*.sarif
             gitleaks.sarif
             /tmp/pre-commit-reports/*.sarif
