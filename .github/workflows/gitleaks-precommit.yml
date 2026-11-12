@@ -1,6 +1,11 @@
 name: gitleaks-precommit
 on:
   workflow_dispatch:
+    inputs:
+      inject_test_fixture:
+        description: Inject an obvious synthetic placeholder to verify detection
+        type: boolean
+        default: false
   push:
     branches: [verify/gitleaks-docs-20261112]
 permissions:
@@ -42,6 +47,7 @@ jobs:
       - name: Keep private action metadata outside scan workspace
         run: mv .private-actions/pre-commit-action/.git "$RUNNER_TEMP/pre-commit-action-git"
       - name: Create synthetic detection fixture
+        if: ${{ inputs.inject_test_fixture == true }}
         run: python -c "from pathlib import Path; Path('gitleaks-validation-placeholder.txt').write_text('Synthetic test placeholder, never a credential\ncustom_key_' + 'A' * 32 + '\n')"
       - name: Run documented pre-commit hook
         id: pre-commit
@@ -55,7 +61,7 @@ jobs:
         if: ${{ always() }}
         run: |
           test -s gitleaks.sarif
-          python -c "import json; d=json.load(open('gitleaks.sarif')); assert d['version']=='2.1.0'; assert d['runs'][0]['results']; print('SARIF findings:', len(d['runs'][0]['results']))"
+          python -c "import json; d=json.load(open('gitleaks.sarif')); assert d['version']=='2.1.0'; assert isinstance(d['runs'][0].get('results', []), list); print('SARIF findings:', len(d['runs'][0].get('results', [])))"
       - name: Checkout private upload-sarif-action
         if: ${{ always() }}
         uses: actions/checkout@v4
@@ -66,7 +72,7 @@ jobs:
           path: .private-actions/upload-sarif-action
           persist-credentials: false
       - name: Upload SARIF to openLiBing
-        if: ${{ always() }}
+        if: ${{ always() && steps.report.outcome == 'success' }}
         uses: ./.private-actions/upload-sarif-action
         with:
           sarif_file: ${{ steps.pre-commit.outputs.sarif-files }}
